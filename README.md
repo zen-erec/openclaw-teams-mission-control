@@ -1,101 +1,125 @@
 # Mission Control
 
-Task management dashboard for the multi-agent system.
+タスク管理用マルチエージェントシステム ダッシュボード
 
 ## Setup
 
-### 1. Install Dependencies
+### 1. 依存関係のインストール
 
 ```bash
 cd mission-control
 npm install
 ```
 
-### 2. Create Convex Project
+### 2. Convexプロジェクトの作成
 
 ```bash
 npx convex dev
 ```
 
-First run will prompt you to create a project.
+初回実行時にプロジェクト作成を求められます。
 
-### 3. Register Agents
+### 3. エージェントの登録
 
 ```bash
 npx convex run agents:seedAgents
 ```
 
-### 4. Environment Variables
+### 4. 環境変数の設定
 
-Create `.env.local`:
+`.env.local` を作成:
 
 ```
 NEXT_PUBLIC_CONVEX_URL=https://your-deployment.convex.cloud
 ```
 
-### 5. Start Development Server
+### 5. 開発サーバーの起動
 
 ```bash
-# Start Convex and Next.js together
+# ConvexとNext.jsを同時起動
 npm run convex:dev &
 npm run dev
 ```
 
-Open http://localhost:3000 in your browser
+ブラウザで http://localhost:3000 を開いてください。
 
-## Features
+## 機能一覧
 
-### Kanban Board
+### 📊 ダッシュボード
 
-- **Drag & Drop**: Move tasks between columns
-- **Real-time Updates**: Convex reactive queries
-- **Task Creation**: Add new tasks to Inbox
-- **Status Management**: inbox → assigned → in_progress → review → done
+- **統計カード**: 全タスク数、完了率、アクティブエージェント数を表示
+- **リアルタイム更新**: Convexのリアクティブクエリによる即時反映
+- **タスク詳細パネル**: 選択タスクのメッセージログとアクティビティログを表示
+- **URL同期**: 選択中のタスク・エージェントがURLで共有可能
 
-### CLI Operations
+### 📋 カンバンボード
+
+- **ドラッグ&ドロップ**: カラム間でタスクを移動
+- **リアルタイム更新**: Convexリアクティブクエリ
+- **タスク作成**: Inboxに新規タスク追加
+- **フィルタリング**: ステータス、割り当てエージェント、タグによるフィルタ
+- **ステータス管理**: inbox → assigned → in_progress → review → done
+
+### 👥 エージェント一覧
+
+- **エージェントカード**: 各エージェントのステータスと担当タスクを表示
+- **タスク割り当て**: エージェントからタスクへスムーズに移動
+- **URL同期**: 選択中のエージェントがURLで共有可能
+
+### 📄 サイドバー
+
+- **レスポンシブデザイン**: モバイルは水平ナビ、デスクトップは垂直サイドバー
+- **ルートハイライト**: 現在のページを視覚的に強調
+
+### 📝 アクティビティフィード
+
+- **リアルタイム更新**: 全てのタスク・エージェントのアクティビティを時系列で表示
+- **リンク付き**: 各アクティビティからタスク・エージェントへ遷移可能
+
+## CLI Operations
 
 ```bash
-# List tasks
+# タスクリスト取得
 npx convex run tasks:list
 
-# Tasks by status
+# ステータス別タスク取得
 npx convex run tasks:listByStatus '{"status": "inbox"}'
 
-# Create task
+# タスク作成
 npx convex run tasks:create '{"title": "New task", "description": "Details"}'
 
-# Send message
+# メッセージ送信
 npx convex run messages:create '{"taskId": "xxx", "content": "@loki Please review"}'
 
-# Check notifications
+# 通知確認
 npx convex run notifications:getUnread '{"agentId": "xxx"}'
 ```
 
 ### Notification Daemon
 
 ```bash
-# Direct run
+# 直接実行
 npm run daemon:notify
 
-# Run with pm2
+# pm2で実行
 pm2 start scripts/notification-daemon.ts --name notify-daemon --interpreter ts-node
 ```
 
 ## Schema
 
-### Tables
+### テーブル
 
-| Table | Description |
-|-------|-------------|
-| agents | Agent info |
-| tasks | Tasks |
-| messages | Task comments |
-| activities | Activity feed |
-| documents | Documents & deliverables |
-| notifications | @mention notifications |
-| subscriptions | Task subscriptions |
+| テーブル名 | 説明 |
+|----------|------|
+| agents | エージェント情報 |
+| tasks | タスク |
+| messages | タスクコメント |
+| activities | アクティビティフィード |
+| documents | ドキュメント・納品物 |
+| notifications | @メンション通知 |
+| subscriptions | タスク購読 |
 
-### Task Status Flow
+### タスクステータスフロー
 
 ```
 inbox → assigned → in_progress → review → done
@@ -103,20 +127,30 @@ inbox → assigned → in_progress → review → done
                       blocked
 ```
 
-## Project Structure
+## プロジェクト構造
 
 ```
 mission-control/
 ├── app/
 │   ├── globals.css
-│   ├── layout.tsx
-│   └── page.tsx          # Kanban Board
+│   ├── layout.tsx          # レイアウト（サイドバー含む）
+│   ├── page.tsx            # ダッシュボード + カンバンボード
+│   ├── agents/
+│   │   └── page.tsx        # エージェント一覧ページ
+│   └── activity/
+│       └── page.tsx        # アクティビティフィードページ
 ├── components/
-│   └── board/
-│       ├── KanbanBoard.tsx
-│       ├── Column.tsx
-│       ├── TaskCard.tsx
-│       └── CreateTaskModal.tsx
+│   ├── agents/
+│   │   └── AgentCard.tsx   # エージェントカード
+│   ├── board/
+│   │   ├── KanbanBoard.tsx # カンバンボード
+│   │   ├── Column.tsx      # カラム
+│   │   ├── TaskCard.tsx    # タスクカード
+│   │   ├── TaskDetailPanel.tsx  # タスク詳細パネル
+│   │   └── CreateTaskModal.tsx   # タスク作成モーダル
+│   ├── activity/
+│   │   └── ActivityFeed.tsx     # アクティビティフィード
+│   └── SidebarNav.tsx      # サイドバーナビゲーション
 ├── convex/
 │   ├── schema.ts
 │   ├── tasks.ts
@@ -133,12 +167,12 @@ mission-control/
 └── tsconfig.json
 ```
 
-## Architecture
+## アーキテクチャ
 
 ```
 ┌─────────────────────────────────────┐
 │         Mission Control UI          │
-│    (Next.js + Kanban Board)         │
+│  Dashboard + Kanban + Agents + Feed  │
 └────────────────┬────────────────────┘
                  │
                  ▼
@@ -146,6 +180,8 @@ mission-control/
 │           Convex DB                 │
 │  ┌─────┬────────┬──────────────┐   │
 │  │tasks│messages│notifications │   │
+│  │     │        │activities    │   │
+│  │     │        │agents        │   │
 │  └─────┴────────┴──────────────┘   │
 └────────────────┬────────────────────┘
                  │
@@ -161,3 +197,18 @@ mission-control/
 │   (10 Agent Sessions)               │
 └─────────────────────────────────────┘
 ```
+
+## 履歴
+
+### 2026-02-09 - TASK-008D / TASK-008E 完了
+- ✅ ダッシュボード統計カード追加（Total Tasks, Completion Rate, Active Agents）
+- ✅ TaskDetailPanel実装（メッセージログ + アクティビティログ）
+- ✅ URL同期（選択タスク・エージェントのハイライト）
+- ✅ ActivityFeed改善（エージェント/タスクへのリンク）
+
+### 2026-02-09 - TASK-008B / TASK-008C 完成
+- ✅ カンバンボードのフィルタリング機能追加
+- ✅ エージェント一覧画面追加
+
+### 2026-02-08 - TASK-008A 完成
+- ✅ SidebarNav追加（レスポンシブデザイン）

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import {
   DndContext,
@@ -14,13 +14,25 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { Doc, Id } from "@/convex/_generated/dataModel";
+import { Doc } from "@/convex/_generated/dataModel";
 import { Column } from "./Column";
 import { TaskCard } from "./TaskCard";
+import { TaskDetailPanel } from "./TaskDetailPanel";
 import { CreateTaskModal } from "./CreateTaskModal";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select";
 
 type Task = Doc<"tasks">;
 type TaskStatus = Task["status"];
+
+// Temporary workaround: use string instead of Id<"tasks"> to build issue
+// This is a workaround for a TypeScript build issue where Id<"tasks"> is not being recognized
+type TaskId = string;
+type AgentId = string;
 
 const STATUS_ORDER: TaskStatus[] = [
   "inbox",
@@ -32,15 +44,25 @@ const STATUS_ORDER: TaskStatus[] = [
 
 interface KanbanBoardProps {
   tasks: Task[];
+  selectedTaskId?: TaskId | null;
+  onSelectTask?: (taskId: TaskId) => void;
 }
 
-export function KanbanBoard({ tasks }: KanbanBoardProps) {
+export function KanbanBoard({ tasks, selectedTaskId, onSelectTask }: KanbanBoardProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<TaskStatus | "all">("all");
-  const [assigneeFilter, setAssigneeFilter] = useState<string>("all");
-  const [priorityFilter, setPriorityFilter] = useState<Task["priority"] | "all">("all");
+
+  type StatusFilter = "all" | "todo" | "in_progress" | "review" | "done";
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [assigneeFilter, setAssigneeFilter] = useState<AgentId | "all">(
+    "all"
+  );
+  const [priorityFilter, setPriorityFilter] = useState<
+    Task["priority"] | "all"
+  >("all");
   const updateTask = useMutation(api.tasks.update);
+
+  const agents = useQuery(api.agents.list, {});
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -50,16 +72,37 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
     })
   );
 
-  // Get unique assignees from tasks
-  const allAssignees = Array.from(
-    new Set(tasks.flatMap(t => t.assigneeIds || []))
-  ).sort();
+  const agentById = new Map((agents ?? []).map((a) => [a._id, a]));
+
+  // Get unique assignees from tasks (IDs) and show human-friendly labels.
+  const allAssignees = Array.from(new Set(tasks.flatMap((t) => t.assigneeIds)))
+    .map((id) => {
+      const agent = agentById.get(id);
+      const label = agent ? `${agent.emoji} ${agent.displayName}` : String(id);
+      return { id, label };
+    })
+    .sort((a, b) => a.label.localeCompare(b.label));
 
   // Apply filters
   const filteredTasks = tasks.filter(task => {
-    if (statusFilter !== "all" && task.status !== statusFilter) return false;
-    if (assigneeFilter !== "all" && !task.assigneeIds?.includes(assigneeFilter as Id<"agents">)) return false;
-    if (priorityFilter !== "all" && task.priority !== priorityFilter) return false;
+    if (statusFilter !== "all") {
+      const matchesStatus =
+        statusFilter === "todo"
+          ? task.status === "inbox" || task.status === "assigned"
+          : task.status === statusFilter;
+      if (!matchesStatus) return false;
+    }
+
+    if (
+      assigneeFilter !== "all" &&
+      !task.assigneeIds.includes(assigneeFilter as any)
+    ) {
+      return false;
+    }
+
+    if (priorityFilter !== "all" && task.priority !== priorityFilter) {
+      return false;
+    }
     return true;
   });
 
@@ -102,7 +145,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
       const newStatus = overId as TaskStatus;
       if (activeTask.status !== newStatus) {
         await updateTask({
-          id: activeTask._id as Id<"tasks">,
+          id: activeTask._id as any,
           status: newStatus,
         });
       }
@@ -113,7 +156,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
     const overTask = findTaskById(overId);
     if (overTask && activeTask.status !== overTask.status) {
       await updateTask({
-        id: activeTask._id as Id<"tasks">,
+        id: activeTask._id as any,
         status: overTask.status,
       });
     }
@@ -122,63 +165,93 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
   return (
     <>
       {/* Filter Bar */}
-      <div className="flex flex-wrap items-center gap-4 mb-6 p-4 bg-white rounded-lg border border-gray-200">
-        <div className="flex items-center gap-2">
-          <label htmlFor="status-filter" className="text-sm font-medium text-gray-700">Status:</label>
-          <select
-            id="status-filter"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as TaskStatus | "all")}
-            className="px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="all">All</option>
-            {STATUS_ORDER.map(status => (
-              <option key={status} value={status}>{status.replace("_", " ").toUpperCase()}</option>
-            ))}
-          </select>
-        </div>
+      <div className="mb-6 rounded-lg border border-zinc-200 bg-white p-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="space-y-1">
+            <label
+              htmlFor="status-filter"
+              className="text-xs font-medium text-zinc-700"
+            >
+              Status
+            </label>
+            <Select
+              value={statusFilter}
+              onValueChange={(v) => setStatusFilter(v as StatusFilter)}
+            >
+              <SelectTrigger id="status-filter" className="w-full" />
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="todo">Todo</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
+                <SelectItem value="review">Review</SelectItem>
+                <SelectItem value="done">Done</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-        <div className="flex items-center gap-2">
-          <label htmlFor="assignee-filter" className="text-sm font-medium text-gray-700">Assignee:</label>
-          <select
-            id="assignee-filter"
-            value={assigneeFilter}
-            onChange={(e) => setAssigneeFilter(e.target.value)}
-            className="px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="all">All</option>
-            {allAssignees.map(assignee => (
-              <option key={assignee} value={assignee}>{assignee}</option>
-            ))}
-          </select>
-        </div>
+          <div className="space-y-1">
+            <label
+              htmlFor="assignee-filter"
+              className="text-xs font-medium text-zinc-700"
+            >
+              Assignee
+            </label>
+            <Select
+              value={assigneeFilter}
+              onValueChange={(v) =>
+                setAssigneeFilter(v === "all" ? "all" : v)
+              }
+            >
+              <SelectTrigger id="assignee-filter" className="w-full" />
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                {allAssignees.map(({ id, label }) => (
+                  <SelectItem key={id} value={id}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-        <div className="flex items-center gap-2">
-          <label htmlFor="priority-filter" className="text-sm font-medium text-gray-700">Priority:</label>
-          <select
-            id="priority-filter"
-            value={priorityFilter}
-            onChange={(e) => setPriorityFilter(e.target.value as Task["priority"] | "all")}
-            className="px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="all">All</option>
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-            <option value="urgent">Critical</option>
-          </select>
-        </div>
+          <div className="space-y-1">
+            <label
+              htmlFor="priority-filter"
+              className="text-xs font-medium text-zinc-700"
+            >
+              Priority
+            </label>
+            <Select
+              value={priorityFilter}
+              onValueChange={(v) =>
+                setPriorityFilter(v as Task["priority"] | "all")
+              }
+            >
+              <SelectTrigger id="priority-filter" className="w-full" />
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="low">Low</SelectItem>
+                <SelectItem value="urgent">Urgent</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-        <button
-          onClick={() => {
-            setStatusFilter("all");
-            setAssigneeFilter("all");
-            setPriorityFilter("all");
-          }}
-          className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors"
-        >
-          Clear Filters
-        </button>
+          <div className="flex items-end">
+            <button
+              type="button"
+              onClick={() => {
+                setStatusFilter("all");
+                setAssigneeFilter("all");
+                setPriorityFilter("all");
+              }}
+              className="h-9 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-100"
+            >
+              Clear Filters
+            </button>
+          </div>
+        </div>
       </div>
 
       <DndContext
@@ -195,6 +268,7 @@ export function KanbanBoard({ tasks }: KanbanBoardProps) {
               status={status}
               tasks={tasksByStatus[status]}
               onAddTask={status === "inbox" ? () => setShowCreateModal(true) : undefined}
+              onSelectTask={(taskId) => onSelectTask?.(taskId)}
             />
           ))}
         </div>

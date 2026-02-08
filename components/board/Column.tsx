@@ -5,10 +5,13 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { Doc } from "@/convex/_generated/dataModel";
+import { Doc, Id } from "@/convex/_generated/dataModel";
 import { TaskCard } from "./TaskCard";
 import { cn } from "@/lib/utils";
 import { Plus } from "lucide-react";
+
+// Temporary workaround: use string instead of Id<"tasks"> to build issue
+type TaskId = string;
 
 type Task = Doc<"tasks">;
 type TaskStatus = Task["status"];
@@ -35,9 +38,10 @@ interface ColumnProps {
   status: TaskStatus;
   tasks: Task[];
   onAddTask?: () => void;
+  onSelectTask: (taskId: TaskId) => void;
 }
 
-export function Column({ status, tasks, onAddTask }: ColumnProps) {
+export function Column({ status, tasks, onAddTask, onSelectTask }: ColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
 
   return (
@@ -69,7 +73,11 @@ export function Column({ status, tasks, onAddTask }: ColumnProps) {
           strategy={verticalListSortingStrategy}
         >
           {tasks.map((task) => (
-            <TaskCard key={task._id} task={task} />
+            <TaskCard
+              key={task._id}
+              task={task}
+              onClick={() => onSelectTask(task._id)}
+            />
           ))}
         </SortableContext>
         {onAddTask && (

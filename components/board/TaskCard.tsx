@@ -24,9 +24,10 @@ const PRIORITY_LABELS: Record<Task["priority"], string> = {
 
 interface TaskCardProps {
   task: Task;
+  onClick?: () => void;
 }
 
-export function TaskCard({ task }: TaskCardProps) {
+export function TaskCard({ task, onClick }: TaskCardProps) {
   const {
     attributes,
     listeners,
@@ -48,8 +49,9 @@ export function TaskCard({ task }: TaskCardProps) {
     <div
       ref={setNodeRef}
       style={style}
+      onClick={onClick}
       className={cn(
-        "bg-white rounded-lg border border-zinc-200 p-3 shadow-sm hover:shadow-md transition-shadow",
+        "bg-white rounded-lg border border-zinc-200 p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer",
         isDragging && "opacity-50 shadow-lg"
       )}
     >
@@ -58,6 +60,10 @@ export function TaskCard({ task }: TaskCardProps) {
           className="mt-1 cursor-grab active:cursor-grabbing text-zinc-400 hover:text-zinc-600"
           {...attributes}
           {...listeners}
+          onClick={(e) => {
+            e.stopPropagation();
+            onClick?.();
+          }}
         >
           <GripVertical size={16} />
         </button>

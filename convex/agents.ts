@@ -54,6 +54,23 @@ export const listByStatus = query({
   },
 });
 
+// 複数エージェント取得（IDリストから）
+export const getByIds = query({
+  args: {
+    ids: v.array(v.id("agents")),
+  },
+  handler: async (ctx, args) => {
+    const agents = [];
+    for (const id of args.ids) {
+      const agent = await ctx.db.get(id);
+      if (agent) {
+        agents.push(agent);
+      }
+    }
+    return agents;
+  },
+});
+
 // エージェント作成（初期セットアップ用）
 export const create = mutation({
   args: {

@@ -41,6 +41,9 @@ export function TaskCard({ task }: TaskCardProps) {
     transition,
   };
 
+  const firstTag = task.tags?.[0];
+  const extraTagCount = Math.max(0, (task.tags?.length ?? 0) - 1);
+
   return (
     <div
       ref={setNodeRef}
@@ -76,10 +79,11 @@ export function TaskCard({ task }: TaskCardProps) {
             >
               {PRIORITY_LABELS[task.priority]}
             </span>
-            {task.phase && (
+            {firstTag && (
               <span className="flex items-center gap-1 text-xs text-zinc-500 bg-zinc-100 px-2 py-0.5 rounded-full">
                 <Tag size={10} />
-                {task.phase}
+                {firstTag}
+                {extraTagCount > 0 ? ` +${extraTagCount}` : null}
               </span>
             )}
             {task.assigneeIds.length > 0 && (

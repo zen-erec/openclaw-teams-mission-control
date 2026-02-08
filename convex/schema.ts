@@ -112,7 +112,8 @@ export default defineSchema({
       v.literal("comment"),
       v.literal("status_update"),
       v.literal("escalation"),
-      v.literal("system")
+      v.literal("system"),
+      v.literal("quality_report")
     )),
 
     createdAt: v.number(),
@@ -133,7 +134,8 @@ export default defineSchema({
       v.literal("message_sent"),
       v.literal("document_created"),
       v.literal("agent_heartbeat"),
-      v.literal("escalation")
+      v.literal("escalation"),
+      v.literal("quality_gate_updated")
     ),
 
     agentId: v.optional(v.id("agents")),

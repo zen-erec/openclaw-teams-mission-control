@@ -20,7 +20,6 @@ const STATUS_LABELS: Record<TaskStatus, string> = {
   review: "Review",
   done: "Done",
   blocked: "Blocked",
-  cancelled: "Cancelled",
 };
 
 const STATUS_COLORS: Record<TaskStatus, string> = {
@@ -30,7 +29,6 @@ const STATUS_COLORS: Record<TaskStatus, string> = {
   review: "border-t-purple-400",
   done: "border-t-green-400",
   blocked: "border-t-red-400",
-  cancelled: "border-t-zinc-300",
 };
 
 interface ColumnProps {

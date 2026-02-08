@@ -5,13 +5,16 @@ import { api } from "@/convex/_generated/api";
 import { ActivityFeed, ActivityFilter } from "@/components/activity/ActivityFeed";
 import { useState } from "react";
 import { Activity } from "lucide-react";
+import type { Doc } from "@/convex/_generated/dataModel";
 
 export default function ActivityPage() {
-  const [filterType, setFilterType] = useState<string | undefined>(undefined);
+  const [filterType, setFilterType] = useState<Doc<"activities">["type"] | undefined>(
+    undefined
+  );
 
   const activities = useQuery(api.activities.recent, {
     limit: 100,
-    type: filterType as any,
+    type: filterType,
   });
 
   const tasks = useQuery(api.tasks.list, { limit: 100 });
@@ -43,7 +46,9 @@ export default function ActivityPage() {
         </div>
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <div className="text-sm text-zinc-500 mb-1">アクティブエージェント</div>
-          <div className="text-2xl font-bold text-zinc-900">{agents.length}</div>
+          <div className="text-2xl font-bold text-zinc-900">
+            {agents.filter(a => a.status === "active").length}
+          </div>
         </div>
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <div className="text-sm text-zinc-500 mb-1">完了タスク</div>

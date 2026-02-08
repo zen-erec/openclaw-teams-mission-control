@@ -10,9 +10,6 @@ import { TaskCard } from "./TaskCard";
 import { cn } from "@/lib/utils";
 import { Plus } from "lucide-react";
 
-// Temporary workaround: use string instead of Id<"tasks"> to build issue
-type TaskId = string;
-
 type Task = Doc<"tasks">;
 type TaskStatus = Task["status"];
 
@@ -38,10 +35,17 @@ interface ColumnProps {
   status: TaskStatus;
   tasks: Task[];
   onAddTask?: () => void;
-  onSelectTask: (taskId: TaskId) => void;
+  selectedTaskId?: Id<"tasks"> | null;
+  onSelectTask: (taskId: Id<"tasks">) => void;
 }
 
-export function Column({ status, tasks, onAddTask, onSelectTask }: ColumnProps) {
+export function Column({
+  status,
+  tasks,
+  onAddTask,
+  selectedTaskId,
+  onSelectTask,
+}: ColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
 
   return (
@@ -76,6 +80,7 @@ export function Column({ status, tasks, onAddTask, onSelectTask }: ColumnProps) 
             <TaskCard
               key={task._id}
               task={task}
+              selected={selectedTaskId === task._id}
               onClick={() => onSelectTask(task._id)}
             />
           ))}

@@ -2,13 +2,13 @@
 
 import { Doc } from "@/convex/_generated/dataModel";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 import {
   FileText,
   MessageSquare,
   CheckCircle2,
   AlertTriangle,
   Activity,
-  Users,
   Clock,
 } from "lucide-react";
 
@@ -16,8 +16,10 @@ interface ActivityFeedProps {
   activities: Doc<"activities">[];
   tasks?: Doc<"tasks">[];
   agents?: Doc<"agents">[];
-  filterType?: string;
+  filterType?: Doc<"activities">["type"];
 }
+
+type ActivityType = Doc<"activities">["type"];
 
 // アクティビティタイプの設定
 const activityConfig = {
@@ -61,7 +63,14 @@ const activityConfig = {
     color: "text-red-600 bg-red-100",
     label: "エスカレーション",
   },
-} as const;
+} as const satisfies Record<
+  ActivityType,
+  {
+    icon: React.ComponentType<{ className?: string }>;
+    color: string;
+    label: string;
+  }
+>;
 
 export function ActivityFeed({ activities, tasks, agents, filterType }: ActivityFeedProps) {
   const formatTimestamp = (timestamp: number) => {
@@ -79,16 +88,14 @@ export function ActivityFeed({ activities, tasks, agents, filterType }: Activity
     return new Date(timestamp).toLocaleDateString("ja-JP");
   };
 
-  const getAgentName = (agentId?: string) => {
+  const getAgent = (agentId?: Doc<"agents">["_id"]) => {
     if (!agentId) return null;
-    const agent = agents?.find(a => a._id === agentId);
-    return agent ? `${agent.emoji} ${agent.displayName}` : "不明なエージェント";
+    return agents?.find((a) => a._id === agentId) ?? null;
   };
 
-  const getTaskTitle = (taskId?: string) => {
+  const getTask = (taskId?: Doc<"tasks">["_id"]) => {
     if (!taskId) return null;
-    const task = tasks?.find(t => t._id === taskId);
-    return task?.title;
+    return tasks?.find((t) => t._id === taskId) ?? null;
   };
 
   // filterTypeがある場合でフィルタリング
@@ -101,8 +108,8 @@ export function ActivityFeed({ activities, tasks, agents, filterType }: Activity
       {filteredActivities.map((activity) => {
         const config = activityConfig[activity.type];
         const Icon = config.icon;
-        const agentName = getAgentName(activity.agentId);
-        const taskTitle = getTaskTitle(activity.taskId);
+        const agent = getAgent(activity.agentId);
+        const task = getTask(activity.taskId);
 
         return (
           <div
@@ -120,8 +127,13 @@ export function ActivityFeed({ activities, tasks, agents, filterType }: Activity
                 <div className="flex-1">
                   {/* Agent Name + Type Badge */}
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    {agentName && (
-                      <span className="font-medium text-zinc-900">{agentName}</span>
+                    {activity.agentId && (
+                      <Link
+                        href={`/agents?agentId=${activity.agentId}`}
+                        className="font-medium text-zinc-900 hover:underline"
+                      >
+                        {agent ? `${agent.emoji} ${agent.displayName}` : "不明なエージェント"}
+                      </Link>
                     )}
                     <span className={cn(
                       "px-2 py-0.5 text-xs font-medium rounded-full",
@@ -137,10 +149,16 @@ export function ActivityFeed({ activities, tasks, agents, filterType }: Activity
                   </p>
 
                   {/* Task Reference */}
-                  {taskTitle && (
+                  {activity.taskId && (
                     <div className="mt-2 flex items-center gap-1.5 text-xs text-zinc-500">
                       <FileText className="w-3 h-3" />
-                      <span className="truncate">{taskTitle}</span>
+                      <Link
+                        href={`/?taskId=${activity.taskId}`}
+                        className="truncate hover:underline"
+                        title={task?.title ?? String(activity.taskId)}
+                      >
+                        {task?.title ?? "タスクを開く"}
+                      </Link>
                     </div>
                   )}
                 </div>
@@ -178,12 +196,12 @@ export function ActivityFeed({ activities, tasks, agents, filterType }: Activity
 
 // アクティビティタイプフィルターコンポーネント
 interface ActivityFilterProps {
-  currentType: string | undefined;
-  onTypeChange: (type: string | undefined) => void;
+  currentType: ActivityType | undefined;
+  onTypeChange: (type: ActivityType | undefined) => void;
 }
 
 export function ActivityFilter({ currentType, onTypeChange }: ActivityFilterProps) {
-  const filters = [
+  const filters: { value: ActivityType | undefined; label: string }[] = [
     { value: undefined, label: "すべて" },
     { value: "task_created", label: "タスク作成" },
     { value: "task_updated", label: "タスク更新" },

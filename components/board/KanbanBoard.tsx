@@ -17,7 +17,6 @@ import {
 import { Doc } from "@/convex/_generated/dataModel";
 import { Column } from "./Column";
 import { TaskCard } from "./TaskCard";
-import { TaskDetailPanel } from "./TaskDetailPanel";
 import { CreateTaskModal } from "./CreateTaskModal";
 import {
   Select,
@@ -29,10 +28,8 @@ import {
 type Task = Doc<"tasks">;
 type TaskStatus = Task["status"];
 
-// Temporary workaround: use string instead of Id<"tasks"> to build issue
-// This is a workaround for a TypeScript build issue where Id<"tasks"> is not being recognized
-type TaskId = string;
-type AgentId = string;
+type TaskId = Task["_id"];
+type AgentId = Doc<"agents">["_id"];
 
 const STATUS_ORDER: TaskStatus[] = [
   "inbox",
@@ -95,7 +92,7 @@ export function KanbanBoard({ tasks, selectedTaskId, onSelectTask }: KanbanBoard
 
     if (
       assigneeFilter !== "all" &&
-      !task.assigneeIds.includes(assigneeFilter as any)
+      !task.assigneeIds.includes(assigneeFilter)
     ) {
       return false;
     }
@@ -116,11 +113,10 @@ export function KanbanBoard({ tasks, selectedTaskId, onSelectTask }: KanbanBoard
     {} as Record<TaskStatus, Task[]>
   );
 
-  const findTaskById = (id: string) =>
-    tasks.find((t) => t._id === id);
+  const findTaskById = (id: TaskId) => tasks.find((t) => t._id === id);
 
   const handleDragStart = (event: DragStartEvent) => {
-    const task = findTaskById(event.active.id as string);
+    const task = findTaskById(event.active.id as TaskId);
     if (task) setActiveTask(task);
   };
 
@@ -134,7 +130,7 @@ export function KanbanBoard({ tasks, selectedTaskId, onSelectTask }: KanbanBoard
 
     if (!over) return;
 
-    const activeId = active.id as string;
+    const activeId = active.id as TaskId;
     const overId = over.id as string;
 
     const activeTask = findTaskById(activeId);
@@ -145,7 +141,7 @@ export function KanbanBoard({ tasks, selectedTaskId, onSelectTask }: KanbanBoard
       const newStatus = overId as TaskStatus;
       if (activeTask.status !== newStatus) {
         await updateTask({
-          id: activeTask._id as any,
+          id: activeTask._id,
           status: newStatus,
         });
       }
@@ -153,10 +149,10 @@ export function KanbanBoard({ tasks, selectedTaskId, onSelectTask }: KanbanBoard
     }
 
     // Dropped on another task - use that task's status
-    const overTask = findTaskById(overId);
+    const overTask = findTaskById(overId as TaskId);
     if (overTask && activeTask.status !== overTask.status) {
       await updateTask({
-        id: activeTask._id as any,
+        id: activeTask._id,
         status: overTask.status,
       });
     }
@@ -199,7 +195,7 @@ export function KanbanBoard({ tasks, selectedTaskId, onSelectTask }: KanbanBoard
             <Select
               value={assigneeFilter}
               onValueChange={(v) =>
-                setAssigneeFilter(v === "all" ? "all" : v)
+                setAssigneeFilter(v === "all" ? "all" : (v as AgentId))
               }
             >
               <SelectTrigger id="assignee-filter" className="w-full" />
@@ -268,6 +264,7 @@ export function KanbanBoard({ tasks, selectedTaskId, onSelectTask }: KanbanBoard
               status={status}
               tasks={tasksByStatus[status]}
               onAddTask={status === "inbox" ? () => setShowCreateModal(true) : undefined}
+              selectedTaskId={selectedTaskId}
               onSelectTask={(taskId) => onSelectTask?.(taskId)}
             />
           ))}

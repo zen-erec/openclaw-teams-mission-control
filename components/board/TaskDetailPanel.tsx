@@ -1,16 +1,13 @@
 "use client";
 
-import { Doc, Id } from "@/convex/_generated/dataModel";
+import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { cn } from "@/lib/utils";
-import { X, User, Calendar, Tag, Activity, FileText, MessageSquare } from "lucide-react";
-
-// Temporary workaround: use string instead of Id<"tasks"> to build issue
-type TaskId = string;
+import { X, Calendar, Tag, Activity, MessageSquare } from "lucide-react";
 
 interface TaskDetailPanelProps {
-  taskId: TaskId | null;
+  taskId: Id<"tasks">;
   onClose: () => void;
 }
 
@@ -46,24 +43,45 @@ const PRIORITY_COLORS: Record<Doc<"tasks">["priority"], string> = {
   urgent: "bg-red-100 text-red-700",
 };
 
+const MESSAGE_TYPE_LABELS: Partial<Record<NonNullable<Doc<"messages">["messageType"]>, string>> = {
+  comment: "Comment",
+  status_update: "Status",
+  quality_report: "Quality",
+  escalation: "Escalation",
+  system: "System",
+};
+
 // Shared panel content component
 function PanelContent({
   task,
   assignees,
   activities,
+  messages,
+  agentById,
   onStatusChange,
 }: {
   task: Doc<"tasks">;
   assignees: Doc<"agents">[];
   activities: Doc<"activities">[];
+  messages: Doc<"messages">[];
+  agentById: Map<Id<"agents">, Doc<"agents">>;
   onStatusChange: (status: Doc<"tasks">["status"]) => void;
 }) {
+  const formatDateTime = (ts: number) => new Date(ts).toLocaleString("ja-JP");
+  const formatDate = (ts: number) => new Date(ts).toLocaleDateString("ja-JP");
+
+  const getMessageSenderLabel = (m: Doc<"messages">) => {
+    if (m.fromHuman || !m.fromAgentId) return "Human";
+    const agent = agentById.get(m.fromAgentId);
+    return agent ? `${agent.emoji} ${agent.displayName}` : "Unknown Agent";
+  };
+
   return (
     <div className="space-y-6">
       {/* Title & Description */}
       <div>
         <h3 className="text-xl font-bold text-zinc-900 mb-2">{task.title}</h3>
-        {task.description && (
+        {task.description.trim().length > 0 && (
           <p className="text-sm text-zinc-700 whitespace-pre-wrap">
             {task.description}
           </p>
@@ -129,56 +147,144 @@ function PanelContent({
       <div className="space-y-2 text-sm">
         <div className="flex items-center gap-2 text-zinc-600">
           <Calendar className="w-4 h-4" />
-          <span>作成: {new Date(task.createdAt).toLocaleDateString("ja-JP")}</span>
+          <span>作成: {formatDate(task.createdAt)}</span>
         </div>
-        {task.updatedAt && (
+        <div className="flex items-center gap-2 text-zinc-600">
+          <Activity className="w-4 h-4" />
+          <span>更新: {formatDate(task.updatedAt)}</span>
+        </div>
+        {task.dueAt && (
+          <div className="flex items-center gap-2 text-zinc-600">
+            <Calendar className="w-4 h-4" />
+            <span>期限: {formatDate(task.dueAt)}</span>
+          </div>
+        )}
+        {task.completedAt && (
           <div className="flex items-center gap-2 text-zinc-600">
             <Activity className="w-4 h-4" />
-            <span>更新: {new Date(task.updatedAt).toLocaleDateString("ja-JP")}</span>
+            <span>完了: {formatDate(task.completedAt)}</span>
           </div>
         )}
       </div>
 
-      {/* Activity Log */}
-      {activities && activities.length > 0 && (
-        <div>
-          <label className="text-xs font-medium text-zinc-500 mb-2 block">アクティビティログ</label>
-          <div className="space-y-2">
-            {activities.slice(0, 10).map((activity) => (
-              <div key={activity._id} className="flex items-start gap-2 text-sm p-2 bg-gray-50 rounded">
-                <Activity className="w-4 h-4 text-zinc-400 mt-0.5 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-zinc-700 truncate">{activity.message}</p>
-                  <p className="text-xs text-zinc-400 mt-0.5">
-                    {new Date(activity.createdAt).toLocaleString("ja-JP")}
-                  </p>
-                </div>
+      {/* Messages Log */}
+      <div>
+        <label className="text-xs font-medium text-zinc-500 mb-2 block">ログ</label>
+        <div className="space-y-4">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <MessageSquare className="w-4 h-4 text-zinc-400" />
+              <span className="text-sm font-medium text-zinc-800">
+                メッセージ
+                {messages.length > 0 ? ` (${messages.length})` : ""}
+              </span>
+            </div>
+            {messages.length > 0 ? (
+              <div className="space-y-2">
+                {messages.slice(-50).map((m) => (
+                  <div key={m._id} className="rounded-lg border border-gray-200 bg-white p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-medium text-zinc-900 truncate">
+                            {getMessageSenderLabel(m)}
+                          </span>
+                          {m.messageType && (
+                            <span className="text-xs font-medium rounded-full bg-zinc-100 text-zinc-700 px-2 py-0.5">
+                              {MESSAGE_TYPE_LABELS[m.messageType] ?? m.messageType}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <span className="text-xs text-zinc-400 whitespace-nowrap">
+                        {formatDateTime(m.createdAt)}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm text-zinc-700 whitespace-pre-wrap break-words">
+                      {m.content}
+                    </p>
+                  </div>
+                ))}
               </div>
-            ))}
+            ) : (
+              <div className="text-sm text-zinc-500 bg-gray-50 rounded-lg p-3">
+                メッセージはまだありません
+              </div>
+            )}
+          </div>
+
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Activity className="w-4 h-4 text-zinc-400" />
+              <span className="text-sm font-medium text-zinc-800">
+                アクティビティ
+                {activities.length > 0 ? ` (${activities.length})` : ""}
+              </span>
+            </div>
+            {activities.length > 0 ? (
+              <div className="space-y-2">
+                {activities.slice(0, 20).map((activity) => (
+                  <div key={activity._id} className="flex items-start gap-2 text-sm p-2 bg-gray-50 rounded">
+                    <Activity className="w-4 h-4 text-zinc-400 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-zinc-700 break-words">{activity.message}</p>
+                      <p className="text-xs text-zinc-400 mt-0.5">
+                        {formatDateTime(activity.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-sm text-zinc-500 bg-gray-50 rounded-lg p-3">
+                アクティビティはまだありません
+              </div>
+            )}
           </div>
         </div>
-      )}
+      </div>
+
     </div>
   );
 }
 
 export function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProps) {
-  const task = useQuery(api.tasks.get, taskId ? { id: taskId as Id<"tasks"> } : "skip");
-  const assignees = useQuery(api.agents.getByIds, { ids: task?.assigneeIds ?? [] });
-  const activities = useQuery(api.activities.listByTask, {
-    taskId: taskId as Id<"tasks">,
-    limit: 50,
-  });
+  const task = useQuery(api.tasks.get, { id: taskId });
+  const activities = useQuery(api.activities.listByTask, { taskId, limit: 50 });
+  const messages = useQuery(api.messages.listByTask, { taskId, limit: 200 });
+  const agents = useQuery(api.agents.list);
 
   const updateTask = useMutation(api.tasks.update);
 
-  if (!taskId || !task) {
-    return null;
-  }
-
   const handleStatusChange = async (newStatus: Doc<"tasks">["status"]) => {
-    await updateTask({ id: task._id as Id<"tasks">, status: newStatus });
+    await updateTask({ id: taskId, status: newStatus });
   };
+
+  const agentById = new Map((agents ?? []).map((a) => [a._id, a] as const));
+  const assignees =
+    task && agents
+      ? task.assigneeIds.map((id) => agentById.get(id)).filter(Boolean)
+      : [];
+
+  const content =
+    task === undefined ? (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-zinc-900" />
+      </div>
+    ) : task === null ? (
+      <div className="py-12 text-center text-zinc-500">
+        <p className="text-sm">タスクが見つかりません</p>
+      </div>
+    ) : (
+      <PanelContent
+        task={task}
+        assignees={assignees as Doc<"agents">[]}
+        activities={activities ?? []}
+        messages={messages ?? []}
+        agentById={agentById}
+        onStatusChange={handleStatusChange}
+      />
+    );
 
   return (
     <>
@@ -199,12 +305,7 @@ export function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProps) {
 
         {/* Content */}
         <div className="p-4">
-          <PanelContent
-            task={task}
-            assignees={assignees ?? []}
-            activities={activities ?? []}
-            onStatusChange={handleStatusChange}
-          />
+          {content}
         </div>
       </div>
 
@@ -227,12 +328,7 @@ export function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProps) {
 
           {/* Content */}
           <div className="p-4">
-            <PanelContent
-              task={task}
-              assignees={assignees ?? []}
-              activities={activities ?? []}
-              onStatusChange={handleStatusChange}
-            />
+            {content}
           </div>
         </div>
       </div>

@@ -1,14 +1,33 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { AgentCard } from "@/components/agents/AgentCard";
-import { Doc } from "@/convex/_generated/dataModel";
+import type { Id } from "@/convex/_generated/dataModel";
+import { cn } from "@/lib/utils";
 
 export default function AgentsPage() {
+  const [selectedAgentId, setSelectedAgentId] = useState<Id<"agents"> | null>(null);
   const agents = useQuery(api.agents.list);
-
   const tasks = useQuery(api.tasks.list, { limit: 100 });
+
+  useEffect(() => {
+    const syncFromLocation = () => {
+      const agentId = new URLSearchParams(window.location.search).get("agentId");
+      setSelectedAgentId((agentId as Id<"agents"> | null) ?? null);
+    };
+
+    syncFromLocation();
+    window.addEventListener("popstate", syncFromLocation);
+    return () => window.removeEventListener("popstate", syncFromLocation);
+  }, []);
+
+  useEffect(() => {
+    if (!selectedAgentId || !agents) return;
+    const el = document.getElementById(`agent-${selectedAgentId}`);
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [selectedAgentId, agents]);
 
   if (agents === undefined || tasks === undefined) {
     return (
@@ -55,11 +74,16 @@ export default function AgentsPage() {
           };
 
           return (
-            <AgentCard
+            <div
               key={agent._id}
-              agent={agent}
-              taskCounts={counts}
-            />
+              id={`agent-${agent._id}`}
+              className={cn(
+                selectedAgentId === agent._id &&
+                  "ring-2 ring-zinc-900 ring-offset-2 ring-offset-zinc-100 rounded-lg"
+              )}
+            >
+              <AgentCard agent={agent} taskCounts={counts} />
+            </div>
           );
         })}
       </div>

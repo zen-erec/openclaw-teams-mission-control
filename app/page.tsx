@@ -1,19 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { KanbanBoard } from "@/components/board/KanbanBoard";
 import { TaskDetailPanel } from "@/components/board/TaskDetailPanel";
-import { CheckCircle2, Users, Clock } from "lucide-react";
-
-// Temporary workaround: use string instead of Id<"tasks"> to build issue
-type TaskId = string;
+import { CheckCircle2, Users } from "lucide-react";
+import type { Id } from "@/convex/_generated/dataModel";
 
 export default function HomePage() {
   const tasks = useQuery(api.tasks.list, { limit: 100 });
   const agents = useQuery(api.agents.list);
-  const [selectedTaskId, setSelectedTaskId] = useState<TaskId | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<Id<"tasks"> | null>(null);
 
   if (tasks === undefined || agents === undefined) {
     return (
@@ -26,10 +24,40 @@ export default function HomePage() {
   // Statistics
   const totalTasks = tasks.length;
   const completedTasks = tasks.filter(t => t.status === "done").length;
-  const inProgressTasks = tasks.filter(t => ["in_progress", "review"].includes(t.status)).length;
-  const blockedTasks = tasks.filter(t => t.status === "blocked").length;
   const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
   const activeAgents = agents.filter(a => a.status === "active").length;
+
+  useEffect(() => {
+    const syncFromLocation = () => {
+      const taskId = new URLSearchParams(window.location.search).get("taskId");
+      setSelectedTaskId((taskId as Id<"tasks"> | null) ?? null);
+    };
+
+    syncFromLocation();
+    window.addEventListener("popstate", syncFromLocation);
+    return () => window.removeEventListener("popstate", syncFromLocation);
+  }, []);
+
+  const setTaskIdInUrl = (taskId: Id<"tasks"> | null) => {
+    const url = new URL(window.location.href);
+    if (taskId) {
+      url.searchParams.set("taskId", taskId);
+    } else {
+      url.searchParams.delete("taskId");
+    }
+    window.history.replaceState({}, "", url.toString());
+  };
+
+  const handleSelectTask = (taskId: Id<"tasks">) => {
+    const next = selectedTaskId === taskId ? null : taskId;
+    setSelectedTaskId(next);
+    setTaskIdInUrl(next);
+  };
+
+  const handleCloseTask = () => {
+    setSelectedTaskId(null);
+    setTaskIdInUrl(null);
+  };
 
   return (
     <div className="flex flex-col lg:flex-row gap-6">
@@ -39,7 +67,7 @@ export default function HomePage() {
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           {/* Total Tasks */}
           <div className="bg-white rounded-lg border border-gray-200 p-4">
             <div className="flex items-center justify-between">
@@ -68,17 +96,6 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* In Progress */}
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm text-zinc-500 mb-1">進行中</div>
-                <div className="text-2xl font-bold text-blue-600">{inProgressTasks}</div>
-              </div>
-              <Clock className="w-10 h-10 text-blue-200" />
-            </div>
-          </div>
-
           {/* Active Agents */}
           <div className="bg-white rounded-lg border border-gray-200 p-4">
             <div className="flex items-center justify-between">
@@ -91,11 +108,15 @@ export default function HomePage() {
           </div>
         </div>
 
-        <KanbanBoard tasks={tasks} selectedTaskId={selectedTaskId} onSelectTask={setSelectedTaskId} />
+        <KanbanBoard
+          tasks={tasks}
+          selectedTaskId={selectedTaskId}
+          onSelectTask={handleSelectTask}
+        />
       </div>
 
       {selectedTaskId && (
-        <TaskDetailPanel taskId={selectedTaskId} onClose={() => setSelectedTaskId(null)} />
+        <TaskDetailPanel taskId={selectedTaskId} onClose={handleCloseTask} />
       )}
     </div>
   );

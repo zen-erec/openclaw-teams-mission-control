@@ -24,10 +24,11 @@ const PRIORITY_LABELS: Record<Task["priority"], string> = {
 
 interface TaskCardProps {
   task: Task;
+  selected?: boolean;
   onClick?: () => void;
 }
 
-export function TaskCard({ task, onClick }: TaskCardProps) {
+export function TaskCard({ task, selected, onClick }: TaskCardProps) {
   const {
     attributes,
     listeners,
@@ -52,6 +53,7 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
       onClick={onClick}
       className={cn(
         "bg-white rounded-lg border border-zinc-200 p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer",
+        selected && "ring-2 ring-zinc-900 ring-offset-2 ring-offset-zinc-50",
         isDragging && "opacity-50 shadow-lg"
       )}
     >

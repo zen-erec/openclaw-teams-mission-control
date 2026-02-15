@@ -1,113 +1,152 @@
 "use client";
 
-import { Doc } from "@/convex/_generated/dataModel";
+import { Heart, Shield, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { User, CheckCircle2, Clock, Activity } from "lucide-react";
 
-interface AgentCardProps {
-  agent: Doc<"agents">;
-  taskCounts: {
-    total: number;
-    completed: number;
-    inProgress: number;
-    lastActivity: number;
+const ABILITY_ORDER = ["STR", "DEX", "CON", "INT", "WIS", "CHA"] as const;
+
+type AbilityKey = (typeof ABILITY_ORDER)[number];
+
+const ABILITY_LABELS: Record<AbilityKey, string> = {
+  STR: "筋力",
+  DEX: "敏捷",
+  CON: "耐久",
+  INT: "知力",
+  WIS: "判断",
+  CHA: "魅力",
+};
+
+const ABILITY_BAR_COLORS: Record<AbilityKey, string> = {
+  STR: "bg-rose-500",
+  DEX: "bg-emerald-500",
+  CON: "bg-sky-500",
+  INT: "bg-violet-500",
+  WIS: "bg-amber-500",
+  CHA: "bg-fuchsia-500",
+};
+
+export interface RpgAgentProfile {
+  name: string;
+  role: string;
+  agentClass: string;
+  level: number;
+  hp: {
+    current: number;
+    max: number;
   };
+  abilities: Record<AbilityKey, number>;
 }
 
-export function AgentCard({ agent, taskCounts }: AgentCardProps) {
-  const formatDate = (timestamp: number) => {
-    const now = Date.now();
-    const diff = now - timestamp;
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const days = Math.floor(hours / 24);
+interface AgentCardProps {
+  agent: RpgAgentProfile;
+}
 
-    if (hours < 1) return "直近";
-    if (hours < 24) return `${hours}時間前`;
-    if (days < 7) return `${days}日前`;
-    return new Date(timestamp).toLocaleDateString("ja-JP");
-  };
+function clampPercent(value: number, max: number) {
+  if (max <= 0) return 0;
+  return Math.max(0, Math.min(100, (value / max) * 100));
+}
 
-  const completionRate = taskCounts.total > 0
-    ? Math.round((taskCounts.completed / taskCounts.total) * 100)
-    : 0;
+function getModifier(score: number) {
+  const modifier = Math.floor((score - 10) / 2);
+  return modifier >= 0 ? `+${modifier}` : `${modifier}`;
+}
+
+export function AgentCard({ agent }: AgentCardProps) {
+  const hpPercent = clampPercent(agent.hp.current, agent.hp.max);
+  const proficiencyBonus = Math.floor((agent.level - 1) / 4) + 2;
+  const initiative = getModifier(agent.abilities.DEX);
+  const armorClass = 10 + Math.floor((agent.abilities.DEX - 10) / 2) + Math.floor(agent.level / 3);
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="text-3xl">{agent.emoji}</div>
-          <div>
-            <h3 className="font-semibold text-zinc-900">{agent.displayName}</h3>
-            <p className="text-sm text-zinc-500">@{agent.name}</p>
-          </div>
+    <article className="relative overflow-hidden rounded-xl border-2 border-amber-800/40 bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100 p-5 shadow-md transition-transform duration-200 hover:-translate-y-1">
+      <div className="pointer-events-none absolute inset-0 opacity-20 [background-image:linear-gradient(120deg,transparent_40%,rgba(120,53,15,.2)_50%,transparent_60%)]" />
+
+      <header className="relative mb-4 flex items-start justify-between">
+        <div>
+          <h2 className="text-2xl font-black tracking-wide text-amber-900">{agent.name}</h2>
+          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-amber-700/90">
+            {agent.agentClass}
+          </p>
         </div>
-        <span className={cn(
-          "px-2 py-1 text-xs font-medium rounded-full",
-          agent.status === "active"
-            ? "bg-green-100 text-green-700"
-            : "bg-gray-100 text-gray-700"
-        )}>
-          {agent.status === "active" ? "アクティブ" : "非アクティブ"}
+        <div className="rounded-lg border border-amber-700/40 bg-amber-100/70 px-3 py-1 text-right">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-700">Level</div>
+          <div className="text-3xl font-black leading-none text-amber-900">{agent.level}</div>
+        </div>
+      </header>
+
+      <p className="mb-4 text-sm font-medium text-amber-900/85">{agent.role}</p>
+
+      <div className="mb-4 grid grid-cols-2 gap-2">
+        <div className="rounded-md border border-amber-700/30 bg-amber-100/60 px-3 py-2 text-sm">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-700">
+            Proficiency
+          </p>
+          <p className="font-bold text-amber-900">+{proficiencyBonus}</p>
+        </div>
+        <div className="rounded-md border border-amber-700/30 bg-amber-100/60 px-3 py-2 text-sm">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-700">Initiative</p>
+          <p className="font-bold text-amber-900">{initiative}</p>
+        </div>
+      </div>
+
+      <div className="mb-5 rounded-lg border border-rose-800/20 bg-rose-50/60 p-3">
+        <div className="mb-2 flex items-center justify-between text-sm font-semibold text-rose-800">
+          <div className="flex items-center gap-1.5">
+            <Heart className="h-4 w-4" />
+            <span>HP</span>
+          </div>
+          <span>{agent.hp.current}/{agent.hp.max}</span>
+        </div>
+        <div className="h-2 rounded-full bg-rose-200/80">
+          <div
+            className={cn(
+              "h-2 rounded-full transition-all",
+              hpPercent > 60 ? "bg-emerald-600" : hpPercent > 30 ? "bg-amber-500" : "bg-rose-600"
+            )}
+            style={{ width: `${hpPercent}%` }}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        {ABILITY_ORDER.map((ability) => {
+          const score = agent.abilities[ability];
+          const modifier = getModifier(score);
+          const ratio = clampPercent(score, 20);
+
+          return (
+            <div
+              key={ability}
+              className="rounded-md border border-amber-700/25 bg-amber-50/80 px-2.5 py-2"
+            >
+              <div className="mb-1 flex items-center justify-between text-xs">
+                <span className="font-bold text-amber-900">{ability}</span>
+                <span className="font-semibold text-amber-800">
+                  {score} ({modifier})
+                </span>
+              </div>
+              <p className="text-[10px] font-medium text-amber-700">{ABILITY_LABELS[ability]}</p>
+              <div className="mt-1.5 h-1.5 rounded-full bg-amber-200">
+                <div
+                  className={cn("h-1.5 rounded-full", ABILITY_BAR_COLORS[ability])}
+                  style={{ width: `${ratio}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <footer className="mt-4 flex items-center justify-between text-xs font-semibold text-amber-800/90">
+        <span className="inline-flex items-center gap-1">
+          <Shield className="h-3.5 w-3.5" />
+          AC {armorClass}
         </span>
-      </div>
-
-      {/* Role */}
-      <div className="mb-4">
-        <p className="text-sm text-zinc-600">{agent.role}</p>
-      </div>
-
-      {/* Stats */}
-      <div className="space-y-3">
-        {/* Total Tasks */}
-        <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center gap-2 text-zinc-600">
-            <User className="w-4 h-4" />
-            <span>担当タスク</span>
-          </div>
-          <span className="font-semibold text-zinc-900">{taskCounts.total}</span>
-        </div>
-
-        {/* Completed */}
-        <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center gap-2 text-zinc-600">
-            <CheckCircle2 className="w-4 h-4" />
-            <span>完了</span>
-          </div>
-          <span className="font-semibold text-green-600">{taskCounts.completed}</span>
-        </div>
-
-        {/* In Progress */}
-        <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center gap-2 text-zinc-600">
-            <Clock className="w-4 h-4" />
-            <span>進行中</span>
-          </div>
-          <span className="font-semibold text-blue-600">{taskCounts.inProgress}</span>
-        </div>
-
-        {/* Completion Rate */}
-        {taskCounts.total > 0 && (
-          <div className="pt-3 border-t border-gray-100">
-            <div className="flex items-center justify-between text-sm mb-1">
-              <span className="text-zinc-600">完了率</span>
-              <span className="font-semibold text-zinc-900">{completionRate}%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className="bg-green-500 h-2 rounded-full transition-all"
-                style={{ width: `${completionRate}%` }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Last Activity */}
-        <div className="flex items-center gap-2 text-sm text-zinc-500 pt-2">
-          <Activity className="w-4 h-4" />
-          <span>最終活動: {formatDate(taskCounts.lastActivity)}</span>
-        </div>
-      </div>
-    </div>
+        <span className="inline-flex items-center gap-1">
+          <Sparkles className="h-3.5 w-3.5" />
+          Ready
+        </span>
+      </footer>
+    </article>
   );
 }

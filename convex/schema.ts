@@ -88,7 +88,12 @@ export default defineSchema({
   })
     .index("by_status", ["status"])
     .index("by_assignee", ["assigneeIds"])
-    .index("by_created", ["createdAt"]),
+    .index("by_created", ["createdAt"])
+    .index("by_due", ["dueAt"])
+    .searchIndex("search_tasks", {
+      searchField: "title",
+      filterFields: ["status"],
+    }),
 
   // ---------------------------------------------------------------------------
   // Messages テーブル
@@ -135,7 +140,10 @@ export default defineSchema({
       v.literal("document_created"),
       v.literal("agent_heartbeat"),
       v.literal("escalation"),
-      v.literal("quality_gate_updated")
+      v.literal("quality_gate_updated"),
+      v.literal("agent_run_started"),
+      v.literal("agent_run_completed"),
+      v.literal("chat_received")
     ),
 
     agentId: v.optional(v.id("agents")),
@@ -150,7 +158,11 @@ export default defineSchema({
     .index("by_type", ["type"])
     .index("by_agent", ["agentId"])
     .index("by_task", ["taskId"])
-    .index("by_created", ["createdAt"]),
+    .index("by_created", ["createdAt"])
+    .searchIndex("search_activities", {
+      searchField: "message",
+      filterFields: ["type"],
+    }),
 
   // ---------------------------------------------------------------------------
   // Documents テーブル
@@ -183,7 +195,11 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_task", ["taskId"])
-    .index("by_type", ["type"]),
+    .index("by_type", ["type"])
+    .searchIndex("search_documents", {
+      searchField: "title",
+      filterFields: ["type"],
+    }),
 
   // ---------------------------------------------------------------------------
   // Notifications テーブル
@@ -209,6 +225,27 @@ export default defineSchema({
     .index("by_agent", ["mentionedAgentId"])
     .index("by_undelivered", ["mentionedAgentId", "delivered"])
     .index("by_unread", ["mentionedAgentId", "read"]),
+
+  // ---------------------------------------------------------------------------
+  // Content Drafts テーブル
+  // コンテンツパイプライン管理
+  // ---------------------------------------------------------------------------
+  contentDrafts: defineTable({
+    title: v.string(),
+    status: v.union(
+      v.literal("idea"),
+      v.literal("drafting"),
+      v.literal("review"),
+      v.literal("published")
+    ),
+    type: v.string(),
+    assignee: v.optional(v.string()),
+    body: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_status", ["status"])
+    .index("by_created", ["createdAt"]),
 
   // ---------------------------------------------------------------------------
   // Subscriptions テーブル

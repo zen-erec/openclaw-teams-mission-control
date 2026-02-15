@@ -17,7 +17,10 @@ export const recent = query({
       v.literal("document_created"),
       v.literal("agent_heartbeat"),
       v.literal("quality_gate_updated"),
-      v.literal("escalation")
+      v.literal("escalation"),
+      v.literal("agent_run_started"),
+      v.literal("agent_run_completed"),
+      v.literal("chat_received")
     )),
   },
   handler: async (ctx, args) => {
@@ -70,6 +73,23 @@ export const listByAgent = query({
   },
 });
 
+// アクティビティ検索
+export const search = query({
+  args: {
+    query: v.string(),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const limit = args.limit ?? 10;
+    return await ctx.db
+      .query("activities")
+      .withSearchIndex("search_activities", (q) =>
+        q.search("message", args.query)
+      )
+      .take(limit);
+  },
+});
+
 // アクティビティ作成（手動）
 export const create = mutation({
   args: {
@@ -81,7 +101,10 @@ export const create = mutation({
       v.literal("document_created"),
       v.literal("agent_heartbeat"),
       v.literal("quality_gate_updated"),
-      v.literal("escalation")
+      v.literal("escalation"),
+      v.literal("agent_run_started"),
+      v.literal("agent_run_completed"),
+      v.literal("chat_received")
     ),
     message: v.string(),
     agentId: v.optional(v.id("agents")),

@@ -60,6 +60,37 @@ export const listByAssignee = query({
   },
 });
 
+// 期限範囲でタスク取得（カレンダー用）
+export const listByDueRange = query({
+  args: {
+    startTime: v.number(),
+    endTime: v.number(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("tasks")
+      .withIndex("by_due", (q) =>
+        q.gte("dueAt", args.startTime).lte("dueAt", args.endTime)
+      )
+      .collect();
+  },
+});
+
+// タスク検索
+export const search = query({
+  args: {
+    query: v.string(),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const limit = args.limit ?? 10;
+    return await ctx.db
+      .query("tasks")
+      .withSearchIndex("search_tasks", (q) => q.search("title", args.query))
+      .take(limit);
+  },
+});
+
 // タスク詳細取得
 export const get = query({
   args: {
@@ -156,6 +187,7 @@ export const update = mutation({
       v.literal("urgent")
     )),
     assigneeIds: v.optional(v.array(v.id("agents"))),
+    dueAt: v.optional(v.number()),
     updatedByAgentId: v.optional(v.id("agents")),
   },
   handler: async (ctx, args) => {

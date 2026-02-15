@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, LayoutDashboard, Settings, Users } from "lucide-react";
+import { Activity, Calendar, LayoutDashboard, Settings, Users, Clock, MessageSquare, Server, FileText, Search, GitBranch, Brain, FolderOpen } from "lucide-react";
 import clsx from "clsx";
+import { GlobalSearch } from "@/components/search/GlobalSearch";
 
 type NavItem = {
   href: string;
@@ -12,10 +13,19 @@ type NavItem = {
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/agents", label: "Agents", icon: Users },
-  { href: "/activity", label: "Activity", icon: Activity },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/", label: "ダッシュボード", icon: LayoutDashboard },
+  { href: "/calendar", label: "カレンダー", icon: Calendar },
+  { href: "/agents", label: "エージェント", icon: Users },
+  { href: "/activity", label: "アクティビティ", icon: Activity },
+  { href: "/cron", label: "Cronジョブ", icon: Clock },
+  { href: "/chat", label: "チャット", icon: MessageSquare },
+  { href: "/system", label: "システム", icon: Server },
+  { href: "/content", label: "コンテンツ", icon: FileText },
+  { href: "/knowledge", label: "ナレッジ", icon: Search },
+  { href: "/memory", label: "メモリ", icon: Brain },
+  { href: "/documents", label: "成果物", icon: FolderOpen },
+  { href: "/code", label: "コード", icon: GitBranch },
+  { href: "/settings", label: "設定", icon: Settings },
 ];
 
 function isActivePath(pathname: string, href: string) {
@@ -33,7 +43,12 @@ export default function SidebarNav() {
 
   return (
     <>
-      {/* Mobile: horizontal nav */}
+      {/* Mobile: search + horizontal nav */}
+      <div className="md:hidden bg-zinc-50 border-b border-zinc-200">
+        <div className="mx-auto max-w-7xl px-3 pt-2">
+          <GlobalSearch />
+        </div>
+      </div>
       <nav className="md:hidden bg-zinc-50 border-b border-zinc-200">
         <div className="mx-auto max-w-7xl px-3 py-2">
           <div className="flex items-stretch justify-between gap-1">
@@ -73,6 +88,10 @@ export default function SidebarNav() {
             </span>
             <span className="font-semibold">Mission Control</span>
           </Link>
+        </div>
+
+        <div className="p-3 border-b border-zinc-200">
+          <GlobalSearch />
         </div>
 
         <nav className="p-3 space-y-1">

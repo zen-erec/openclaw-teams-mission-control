@@ -10,6 +10,7 @@ import {
   AlertTriangle,
   Activity,
   Clock,
+  Zap,
 } from "lucide-react";
 
 interface ActivityFeedProps {
@@ -62,6 +63,21 @@ const activityConfig = {
     icon: AlertTriangle,
     color: "text-red-600 bg-red-100",
     label: "エスカレーション",
+  },
+  agent_run_started: {
+    icon: Zap,
+    color: "text-emerald-600 bg-emerald-100",
+    label: "実行開始",
+  },
+  agent_run_completed: {
+    icon: CheckCircle2,
+    color: "text-teal-600 bg-teal-100",
+    label: "実行完了",
+  },
+  chat_received: {
+    icon: MessageSquare,
+    color: "text-indigo-600 bg-indigo-100",
+    label: "チャット",
   },
 } as const satisfies Record<
   ActivityType,
@@ -211,6 +227,9 @@ export function ActivityFilter({ currentType, onTypeChange }: ActivityFilterProp
     { value: "agent_heartbeat", label: "ハートビート" },
     { value: "quality_gate_updated", label: "品質ゲート" },
     { value: "escalation", label: "エスカレーション" },
+    { value: "agent_run_started", label: "実行開始" },
+    { value: "agent_run_completed", label: "実行完了" },
+    { value: "chat_received", label: "チャット" },
   ];
 
   return (

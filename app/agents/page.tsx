@@ -1,98 +1,151 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { AgentCard } from "@/components/agents/AgentCard";
-import type { Id } from "@/convex/_generated/dataModel";
-import { cn } from "@/lib/utils";
+import { Crown, ScrollText, Swords } from "lucide-react";
+import { AgentCard, type RpgAgentProfile } from "@/components/agents/AgentCard";
+
+const AGENT_ROSTER: RpgAgentProfile[] = [
+  {
+    name: "Zen",
+    role: "Squad Lead",
+    agentClass: "Paladin",
+    level: 20,
+    hp: { current: 178, max: 190 },
+    abilities: { STR: 16, DEX: 13, CON: 18, INT: 14, WIS: 17, CHA: 19 },
+  },
+  {
+    name: "Jarvis",
+    role: "Strategic Orchestrator",
+    agentClass: "Artificer",
+    level: 19,
+    hp: { current: 150, max: 164 },
+    abilities: { STR: 10, DEX: 14, CON: 14, INT: 20, WIS: 16, CHA: 15 },
+  },
+  {
+    name: "Shuri",
+    role: "Product Analyst",
+    agentClass: "Wizard",
+    level: 18,
+    hp: { current: 127, max: 140 },
+    abilities: { STR: 9, DEX: 16, CON: 14, INT: 20, WIS: 15, CHA: 14 },
+  },
+  {
+    name: "Fury",
+    role: "Customer Researcher",
+    agentClass: "Rogue",
+    level: 17,
+    hp: { current: 121, max: 135 },
+    abilities: { STR: 12, DEX: 18, CON: 14, INT: 15, WIS: 17, CHA: 13 },
+  },
+  {
+    name: "Vision",
+    role: "SEO Analyst",
+    agentClass: "Cleric",
+    level: 17,
+    hp: { current: 139, max: 152 },
+    abilities: { STR: 14, DEX: 12, CON: 16, INT: 18, WIS: 17, CHA: 15 },
+  },
+  {
+    name: "Loki",
+    role: "Content Writer",
+    agentClass: "Bard",
+    level: 16,
+    hp: { current: 116, max: 130 },
+    abilities: { STR: 10, DEX: 17, CON: 13, INT: 16, WIS: 14, CHA: 20 },
+  },
+  {
+    name: "Quill",
+    role: "Social Media Manager",
+    agentClass: "Ranger",
+    level: 15,
+    hp: { current: 122, max: 136 },
+    abilities: { STR: 13, DEX: 17, CON: 14, INT: 13, WIS: 15, CHA: 18 },
+  },
+  {
+    name: "Wanda",
+    role: "Designer",
+    agentClass: "Sorcerer",
+    level: 18,
+    hp: { current: 129, max: 145 },
+    abilities: { STR: 8, DEX: 14, CON: 14, INT: 17, WIS: 16, CHA: 20 },
+  },
+  {
+    name: "Pepper",
+    role: "Email Marketing",
+    agentClass: "Druid",
+    level: 15,
+    hp: { current: 113, max: 126 },
+    abilities: { STR: 10, DEX: 13, CON: 15, INT: 16, WIS: 18, CHA: 14 },
+  },
+  {
+    name: "Friday",
+    role: "Developer",
+    agentClass: "Warlock",
+    level: 16,
+    hp: { current: 118, max: 132 },
+    abilities: { STR: 9, DEX: 15, CON: 14, INT: 19, WIS: 14, CHA: 16 },
+  },
+  {
+    name: "Rocket",
+    role: "Growth Hacker",
+    agentClass: "Fighter",
+    level: 14,
+    hp: { current: 124, max: 138 },
+    abilities: { STR: 14, DEX: 19, CON: 13, INT: 17, WIS: 12, CHA: 15 },
+  },
+  {
+    name: "Banner",
+    role: "Data Scientist",
+    agentClass: "Barbarian",
+    level: 17,
+    hp: { current: 152, max: 168 },
+    abilities: { STR: 18, DEX: 11, CON: 18, INT: 19, WIS: 13, CHA: 11 },
+  },
+  {
+    name: "Wong",
+    role: "Documentation",
+    agentClass: "Monk",
+    level: 16,
+    hp: { current: 130, max: 142 },
+    abilities: { STR: 13, DEX: 17, CON: 15, INT: 16, WIS: 19, CHA: 12 },
+  },
+];
 
 export default function AgentsPage() {
-  const [selectedAgentId, setSelectedAgentId] = useState<Id<"agents"> | null>(null);
-  const agents = useQuery(api.agents.list);
-  const tasks = useQuery(api.tasks.list, { limit: 100 });
-
-  useEffect(() => {
-    const syncFromLocation = () => {
-      const agentId = new URLSearchParams(window.location.search).get("agentId");
-      setSelectedAgentId((agentId as Id<"agents"> | null) ?? null);
-    };
-
-    syncFromLocation();
-    window.addEventListener("popstate", syncFromLocation);
-    return () => window.removeEventListener("popstate", syncFromLocation);
-  }, []);
-
-  useEffect(() => {
-    if (!selectedAgentId || !agents) return;
-    const el = document.getElementById(`agent-${selectedAgentId}`);
-    el?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, [selectedAgentId, agents]);
-
-  if (agents === undefined || tasks === undefined) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-zinc-900" />
-      </div>
-    );
-  }
-
-  // Calculate task counts per agent
-  const agentTaskCounts = agents.reduce((acc, agent) => {
-    const assignedTasks = tasks.filter(t =>
-      t.assigneeIds?.includes(agent._id)
-    );
-    const completedTasks = assignedTasks.filter(t => t.status === "done");
-    const inProgressTasks = assignedTasks.filter(t =>
-      ["in_progress", "review"].includes(t.status)
-    );
-
-    acc[agent._id] = {
-      total: assignedTasks.length,
-      completed: completedTasks.length,
-      inProgress: inProgressTasks.length,
-      lastActivity: assignedTasks.length > 0
-        ? Math.max(...assignedTasks.map(t => t.createdAt))
-        : agent._creationTime,
-    };
-    return acc;
-  }, {} as Record<string, { total: number; completed: number; inProgress: number; lastActivity: number }>);
-
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-zinc-900">エージェント一覧</h1>
-      </div>
+    <div className="relative">
+      <div className="pointer-events-none absolute inset-0 -z-10 rounded-3xl bg-[radial-gradient(circle_at_top,rgba(180,83,9,0.2),transparent_55%),radial-gradient(circle_at_bottom_right,rgba(146,64,14,0.12),transparent_45%)]" />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {agents.map((agent) => {
-          const counts = agentTaskCounts[agent._id] || {
-            total: 0,
-            completed: 0,
-            inProgress: 0,
-            lastActivity: agent._creationTime,
-          };
+      <section className="mb-8 rounded-2xl border-2 border-amber-800/35 bg-gradient-to-r from-amber-100 via-orange-100 to-amber-100 p-6 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="mb-2 inline-flex items-center gap-2 rounded-full border border-amber-800/40 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">
+              <Crown className="h-3.5 w-3.5" />
+              Mission Control Guild
+            </p>
+            <h1 className="text-3xl font-black tracking-wide text-amber-950">Agent Status Codex</h1>
+            <p className="mt-1 text-sm text-amber-900/80">
+              D&amp;Dスタイルの13エージェントステータスカード
+            </p>
+          </div>
 
-          return (
-            <div
-              key={agent._id}
-              id={`agent-${agent._id}`}
-              className={cn(
-                selectedAgentId === agent._id &&
-                  "ring-2 ring-zinc-900 ring-offset-2 ring-offset-zinc-100 rounded-lg"
-              )}
-            >
-              <AgentCard agent={agent} taskCounts={counts} />
-            </div>
-          );
-        })}
-      </div>
-
-      {agents.length === 0 && (
-        <div className="text-center py-12 text-zinc-500">
-          <p>エージェントが登録されていません</p>
+          <div className="flex gap-2 text-xs font-semibold text-amber-800">
+            <span className="inline-flex items-center gap-1 rounded-md border border-amber-800/30 bg-amber-50 px-2.5 py-1.5">
+              <Swords className="h-3.5 w-3.5" />
+              Active Party: {AGENT_ROSTER.length}
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-md border border-amber-800/30 bg-amber-50 px-2.5 py-1.5">
+              <ScrollText className="h-3.5 w-3.5" />
+              Campaign: /agents
+            </span>
+          </div>
         </div>
-      )}
+      </section>
+
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {AGENT_ROSTER.map((agent) => (
+          <AgentCard key={agent.name} agent={agent} />
+        ))}
+      </section>
     </div>
   );
 }

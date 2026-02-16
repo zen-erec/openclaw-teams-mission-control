@@ -22,6 +22,11 @@ const KNOWN_FILES = [
   "erec-corporate/SITE_MAP.md",
   "erec-corporate/FRONTEND_DESIGN.md",
   "propify-ai/TASKS_BACKLOG.md",
+  "contracts/adsense-account-rental-agreement.md",
+  "民泊/高砂/CONTENT_DRAFT.md",
+  "民泊/高砂/CONTENT_EXTENDED.md",
+  "民泊/高砂/CONTENT_PAGES.md",
+  "ai-jitsumu-lab/PLAN.md",
 ];
 
 const DYNAMIC_PATTERNS = [
@@ -46,6 +51,8 @@ function classifyProject(filePath: string): string {
   if (filePath.startsWith("民泊")) return "民泊";
   if (filePath.startsWith("erec-corporate")) return "eREC";
   if (filePath.startsWith("propify-ai")) return "Propify";
+  if (filePath.startsWith("contracts")) return "契約書";
+  if (filePath.startsWith("ai-jitsumu-lab")) return "AI実務ラボ";
   const first = filePath.split("/")[0];
   return first || "その他";
 }

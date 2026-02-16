@@ -27,6 +27,7 @@ const KNOWN_FILES = [
   "民泊/高砂/CONTENT_EXTENDED.md",
   "民泊/高砂/CONTENT_PAGES.md",
   "ai-jitsumu-lab/PLAN.md",
+  "ai-jitsumu-lab/X_OWNER_ACCOUNT_PLAN.md",
 ];
 
 const DYNAMIC_PATTERNS = [
@@ -34,6 +35,19 @@ const DYNAMIC_PATTERNS = [
   "**/*_REPORT.md",
   "**/COMPLETION_REPORTS.md",
   "TEAM_POLICY.md",
+  "**/*_PLAN.md",
+  "**/*_DESIGN.md",
+  "**/*_GUIDELINES.md",
+  "**/*_SCHEMA.md",
+  "**/*_STRATEGY.md",
+  "**/PROJECT_SUMMARY.md",
+  "**/SITE_MAP.md",
+  "**/SETUP_GUIDE.md",
+  "**/REQUIREMENTS.md",
+  "**/WIREFRAMES.md",
+  "**/CONTENT_*.md",
+  "**/PMS_*.md",
+  "contracts/*.md",
 ];
 
 interface DocInfo {

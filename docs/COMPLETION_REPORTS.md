@@ -10,7 +10,9 @@
 ## 目次
 
 1. [MC Dashboard RPGエージェントステータスページ（TASK-MC-RPG-STATUS）](#mc-dashboard-rpgエージェントステータスページtask-mc-rpg-status)
-2. [クイックリファレンス](#クイックリファレンス)
+2. [成果物自動検出強化](#成果物自動検出強化)
+3. [x-tweets追加](#x-tweets追加)
+4. [クイックリファレンス](#クイックリファレンス)
 
 ---
 
@@ -150,6 +152,81 @@ npm run build
 
 ---
 
+## 成果物自動検出強化
+
+### 完了日
+2026-02-16 JST
+
+### 概要
+Mission Control Dashboardの成果物自動検出機能を強化し、より多くのドキュメントタイプを検出できるようにしました。
+
+### 実施内容
+
+#### 1. DYNAMIC_PATTERNS拡張
+`lib/dynamic-docs.ts` の `DYNAMIC_PATTERNS` に以下のパターンを追加：
+
+- `*_PLAN.md` - 各種計画書
+- `*_STRATEGY.md` - 戦略ドキュメント
+- `*_ANALYSIS.md` - 分析レポート
+- `*_RESEARCH.md` - 調査資料
+- `*_DESIGN.md` - デザイン資料
+- `*_REQUIREMENTS.md` - 要件定義
+
+#### 2. 検証結果
+- **検出ドキュメント数**: 182ドキュメント（拡張前より増加）
+- **commit**: 814fdaf
+
+### 完了条件
+
+- [x] DYNAMIC_PATTERNSに新規パターンを追加
+- [x] ドキュメント数が増加したことを確認
+- [x] ビルド成功
+
+### 成果物
+
+| ファイル | パス | commit |
+|----------|------|--------|
+| 動的ドキュメント検出拡張 | `lib/dynamic-docs.ts` | 814fdaf |
+
+---
+
+## x-tweets追加
+
+### 完了日
+2026-02-16 JST
+
+### 概要
+AI実践LabプロジェクトのXツイート案ディレクトリをMission Control Dashboardの成果物自動検出対象に追加しました。
+
+### 実施内容
+
+#### 1. DYNAMIC_PATTERNS拡張
+`lib/dynamic-docs.ts` の `DYNAMIC_PATTERNS` に以下のパターンを追加：
+
+- `ai-jitsumu-lab/x-tweets/*.md` - Xツイート案
+
+#### 2. 対象ドキュメント
+- `ai-jitsumu-lab/x-tweets/WEEKLY_TWEETS_W1.md` - Week 1 ツイート案（54本、7日分）
+- `ai-jitsumu-lab/x-tweets/ARCHIVE.md` - 投稿済みツイート記録用
+
+#### 3. 検証結果
+- **commit**: abef2bf
+- **検出確認**: ✅ x-tweetsディレクトリ内のドキュメントがDashboardに表示されるようになりました
+
+### 完了条件
+
+- [x] DYNAMIC_PATTERNSに `ai-jitsumu-lab/x-tweets/*.md` を追加
+- [x] commit済み
+- [x] ビルド成功
+
+### 成果物
+
+| ファイル | パス | commit |
+|----------|------|--------|
+| 動的ドキュメント検出拡張 | `lib/dynamic-docs.ts` | abef2bf |
+
+---
+
 ## クイックリファレンス
 
 ### 主要リンク
@@ -195,5 +272,5 @@ kill + npm run start
 
 ---
 
-**最終更新**: 2026-02-16 11:50 JST
+**最終更新**: 2026-02-17 02:50 JST
 **ドキュメント作成者**: Wong (Documentation)

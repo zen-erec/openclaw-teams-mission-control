@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
-import { FileText, Search, RefreshCw, Download, ArrowLeft, Filter, FolderOpen } from "lucide-react";
+import { FileText, Search, RefreshCw, Download, ArrowLeft, Filter, FolderOpen, LayoutGrid, List } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface DocInfo {
@@ -53,6 +53,16 @@ export default function DocumentsPage() {
   const [filterProject, setFilterProject] = useState<string>("all");
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [searching, setSearching] = useState(false);
+  const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem("documents-view-mode") as "grid" | "list") || "grid";
+    }
+    return "grid";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("documents-view-mode", viewMode);
+  }, [viewMode]);
 
   const fetchDocuments = useCallback(async (query?: string) => {
     setLoading(true);
@@ -134,30 +144,54 @@ export default function DocumentsPage() {
         </div>
       </form>
 
-      {/* Filters */}
+      {/* Filters + View Toggle */}
       {!selectedDoc && (
-        <div className="flex gap-3 mb-4 flex-wrap items-center">
-          <Filter className="w-4 h-4 text-zinc-400" />
-          <select
-            value={filterProject}
-            onChange={(e) => setFilterProject(e.target.value)}
-            className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400 bg-white"
-          >
-            <option value="all">全プロジェクト</option>
-            {projects.map((p) => (
-              <option key={p} value={p}>{p}</option>
-            ))}
-          </select>
-          <select
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400 bg-white"
-          >
-            <option value="all">全種類</option>
-            {categories.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
+        <div className="flex gap-3 mb-4 flex-wrap items-center justify-between">
+          <div className="flex gap-3 flex-wrap items-center">
+            <Filter className="w-4 h-4 text-zinc-400" />
+            <select
+              value={filterProject}
+              onChange={(e) => setFilterProject(e.target.value)}
+              className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400 bg-white"
+            >
+              <option value="all">全プロジェクト</option>
+              {projects.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+            <select
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400 bg-white"
+            >
+              <option value="all">全種類</option>
+              {categories.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center border border-zinc-300 rounded-lg overflow-hidden">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={cn(
+                "p-1.5 transition-colors",
+                viewMode === "grid" ? "bg-zinc-200 text-zinc-800" : "text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100"
+              )}
+              title="グリッド表示"
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={cn(
+                "p-1.5 transition-colors",
+                viewMode === "list" ? "bg-zinc-200 text-zinc-800" : "text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100"
+              )}
+              title="リスト表示"
+            >
+              <List className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
 
@@ -198,35 +232,75 @@ export default function DocumentsPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          {Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b, "ja")).map(([project, docs]) => (
-            <div key={project}>
-              <h2 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider mb-3">{project}</h2>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {docs.map((doc) => (
-                  <button
-                    key={doc.path}
-                    onClick={() => handleDocClick(doc)}
-                    className="bg-white rounded-lg border border-zinc-200 p-4 text-left hover:border-zinc-400 hover:shadow-sm transition-all group"
-                  >
-                    <div className="flex items-start gap-3">
-                      <FileText className="w-5 h-5 text-zinc-400 mt-0.5 flex-shrink-0 group-hover:text-zinc-600" />
-                      <div className="min-w-0 flex-1">
-                        <div className="text-sm font-medium text-zinc-800 truncate">{doc.name}</div>
-                        <div className="text-xs text-zinc-400 truncate mt-0.5">{doc.path}</div>
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className={cn("text-xs px-1.5 py-0.5 rounded-full font-medium", CATEGORY_COLORS[doc.category] || "bg-zinc-100 text-zinc-600")}>
-                            {doc.category}
-                          </span>
-                          <span className="text-xs text-zinc-400">{formatSize(doc.size)}</span>
+          {viewMode === "list" ? (
+            <div className="bg-white rounded-lg border border-zinc-200 overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-zinc-200 bg-zinc-50">
+                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-zinc-500 uppercase tracking-wider">ファイル名</th>
+                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-zinc-500 uppercase tracking-wider">プロジェクト</th>
+                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-zinc-500 uppercase tracking-wider">種類</th>
+                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-zinc-500 uppercase tracking-wider">更新日</th>
+                    <th className="text-right px-4 py-2.5 text-xs font-semibold text-zinc-500 uppercase tracking-wider">サイズ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.sort((a, b) => b.modified - a.modified).map((doc) => (
+                    <tr
+                      key={doc.path}
+                      onClick={() => handleDocClick(doc)}
+                      className="border-b border-zinc-100 last:border-0 hover:bg-zinc-50 cursor-pointer transition-colors group"
+                    >
+                      <td className="px-4 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <FileText className="w-4 h-4 text-zinc-400 flex-shrink-0 group-hover:text-zinc-600" />
+                          <span className="font-medium text-zinc-800 truncate">{doc.name}</span>
                         </div>
-                        <div className="text-xs text-zinc-400 mt-1">{formatDate(doc.modified)}</div>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
+                      </td>
+                      <td className="px-4 py-2.5 text-zinc-500">{doc.project}</td>
+                      <td className="px-4 py-2.5">
+                        <span className={cn("text-xs px-1.5 py-0.5 rounded-full font-medium", CATEGORY_COLORS[doc.category] || "bg-zinc-100 text-zinc-600")}>
+                          {doc.category}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5 text-zinc-400 text-xs whitespace-nowrap">{formatDate(doc.modified)}</td>
+                      <td className="px-4 py-2.5 text-zinc-400 text-xs text-right">{formatSize(doc.size)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          ))}
+          ) : (
+            Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b, "ja")).map(([project, docs]) => (
+              <div key={project}>
+                <h2 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider mb-3">{project}</h2>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {docs.map((doc) => (
+                    <button
+                      key={doc.path}
+                      onClick={() => handleDocClick(doc)}
+                      className="bg-white rounded-lg border border-zinc-200 p-4 text-left hover:border-zinc-400 hover:shadow-sm transition-all group"
+                    >
+                      <div className="flex items-start gap-3">
+                        <FileText className="w-5 h-5 text-zinc-400 mt-0.5 flex-shrink-0 group-hover:text-zinc-600" />
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-medium text-zinc-800 truncate">{doc.name}</div>
+                          <div className="text-xs text-zinc-400 truncate mt-0.5">{doc.path}</div>
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className={cn("text-xs px-1.5 py-0.5 rounded-full font-medium", CATEGORY_COLORS[doc.category] || "bg-zinc-100 text-zinc-600")}>
+                              {doc.category}
+                            </span>
+                            <span className="text-xs text-zinc-400">{formatSize(doc.size)}</span>
+                          </div>
+                          <div className="text-xs text-zinc-400 mt-1">{formatDate(doc.modified)}</div>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))
+          )}
         </div>
       )}
     </div>

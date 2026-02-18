@@ -49,6 +49,8 @@ const DYNAMIC_PATTERNS = [
   "**/PMS_*.md",
   "contracts/*.md",
   "ai-jitsumu-lab/x-tweets/*.md",
+  "reports/*.md",
+  "skills/*/SKILL.md",
 ];
 
 interface DocInfo {

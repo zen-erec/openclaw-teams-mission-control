@@ -34,13 +34,10 @@ const MAX_RETRIES = 3;
 // エージェントセッションマッピング
 const AGENT_SESSIONS: Record<string, string> = {
   jarvis: "agent:jarvis:main",
-  shuri: "agent:shuri:main",
-  fury: "agent:fury:main",
   vision: "agent:vision:main",
   loki: "agent:loki:main",
   quill: "agent:quill:main",
   wanda: "agent:wanda:main",
-  pepper: "agent:pepper:main",
   friday: "agent:friday:main",
   wong: "agent:wong:main",
 };

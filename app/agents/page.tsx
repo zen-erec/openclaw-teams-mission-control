@@ -21,22 +21,6 @@ const AGENT_ROSTER: RpgAgentProfile[] = [
     abilities: { STR: 10, DEX: 14, CON: 14, INT: 20, WIS: 16, CHA: 15 },
   },
   {
-    name: "Shuri",
-    role: "Product Analyst",
-    agentClass: "Wizard",
-    level: 18,
-    hp: { current: 127, max: 140 },
-    abilities: { STR: 9, DEX: 16, CON: 14, INT: 20, WIS: 15, CHA: 14 },
-  },
-  {
-    name: "Fury",
-    role: "Customer Researcher",
-    agentClass: "Rogue",
-    level: 17,
-    hp: { current: 121, max: 135 },
-    abilities: { STR: 12, DEX: 18, CON: 14, INT: 15, WIS: 17, CHA: 13 },
-  },
-  {
     name: "Vision",
     role: "SEO Analyst",
     agentClass: "Cleric",
@@ -69,36 +53,12 @@ const AGENT_ROSTER: RpgAgentProfile[] = [
     abilities: { STR: 8, DEX: 14, CON: 14, INT: 17, WIS: 16, CHA: 20 },
   },
   {
-    name: "Pepper",
-    role: "Email Marketing",
-    agentClass: "Druid",
-    level: 15,
-    hp: { current: 113, max: 126 },
-    abilities: { STR: 10, DEX: 13, CON: 15, INT: 16, WIS: 18, CHA: 14 },
-  },
-  {
     name: "Friday",
     role: "Developer",
     agentClass: "Warlock",
     level: 16,
     hp: { current: 118, max: 132 },
     abilities: { STR: 9, DEX: 15, CON: 14, INT: 19, WIS: 14, CHA: 16 },
-  },
-  {
-    name: "Rocket",
-    role: "Growth Hacker",
-    agentClass: "Fighter",
-    level: 14,
-    hp: { current: 124, max: 138 },
-    abilities: { STR: 14, DEX: 19, CON: 13, INT: 17, WIS: 12, CHA: 15 },
-  },
-  {
-    name: "Banner",
-    role: "Data Scientist",
-    agentClass: "Barbarian",
-    level: 17,
-    hp: { current: 152, max: 168 },
-    abilities: { STR: 18, DEX: 11, CON: 18, INT: 19, WIS: 13, CHA: 11 },
   },
   {
     name: "Wong",
@@ -124,7 +84,7 @@ export default function AgentsPage() {
             </p>
             <h1 className="text-3xl font-black tracking-wide text-amber-950">Agent Status Codex</h1>
             <p className="mt-1 text-sm text-amber-900/80">
-              D&amp;Dスタイルの13エージェントステータスカード
+              D&amp;Dスタイルの8エージェントステータスカード
             </p>
           </div>
 

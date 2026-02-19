@@ -204,15 +204,12 @@ export const seedAgents = mutation({
     // gateway/config.json と同期させること
     const agents = [
       { name: "jarvis", displayName: "Zen（善）", role: "Squad Lead", emoji: "🧘", sessionKey: "agent:jarvis:main", model: "anthropic:opus", level: "lead" as const, heartbeatIntervalMin: 15 },
-      { name: "shuri", displayName: "Shuri", role: "Product Analyst", emoji: "🔬", sessionKey: "agent:shuri:main", model: "z_ai:glm47", level: "specialist" as const, heartbeatIntervalMin: 15 },
-      { name: "fury", displayName: "Fury", role: "Customer Researcher", emoji: "🕵️", sessionKey: "agent:fury:main", model: "z_ai:glm47", level: "specialist" as const, heartbeatIntervalMin: 15 },
-      { name: "vision", displayName: "Vision", role: "SEO Analyst", emoji: "👁️", sessionKey: "agent:vision:main", model: "openrouter:kimi-k2.5", level: "specialist" as const, heartbeatIntervalMin: 15 },
-      { name: "loki", displayName: "Loki", role: "Content Writer", emoji: "✍️", sessionKey: "agent:loki:main", model: "anthropic:sonnet", level: "specialist" as const, heartbeatIntervalMin: 15 },
-      { name: "quill", displayName: "Quill", role: "Social Media Manager", emoji: "🐦", sessionKey: "agent:quill:main", model: "openrouter:kimi-k2.5", level: "specialist" as const, heartbeatIntervalMin: 15 },
+      { name: "vision", displayName: "Vision", role: "SEO Analyst", emoji: "👁️", sessionKey: "agent:vision:main", model: "openai_codex:gpt52-xhigh", level: "specialist" as const, heartbeatIntervalMin: 15 },
+      { name: "loki", displayName: "Loki", role: "Content Writer", emoji: "✍️", sessionKey: "agent:loki:main", model: "anthropic:opus", level: "specialist" as const, heartbeatIntervalMin: 15 },
+      { name: "quill", displayName: "Quill", role: "Social Media Manager", emoji: "🐦", sessionKey: "agent:quill:main", model: "anthropic:opus", level: "specialist" as const, heartbeatIntervalMin: 15 },
       { name: "wanda", displayName: "Wanda", role: "Designer", emoji: "🎨", sessionKey: "agent:wanda:main", model: "anthropic:sonnet", level: "specialist" as const, heartbeatIntervalMin: 15 },
-      { name: "pepper", displayName: "Pepper", role: "Email Marketing", emoji: "📧", sessionKey: "agent:pepper:main", model: "anthropic:sonnet", level: "specialist" as const, heartbeatIntervalMin: 15 },
-      { name: "friday", displayName: "Friday", role: "Developer", emoji: "💻", sessionKey: "agent:friday:main", model: "anthropic:sonnet", level: "specialist" as const, heartbeatIntervalMin: 15 },
-      { name: "wong", displayName: "Wong", role: "Documentation", emoji: "📚", sessionKey: "agent:wong:main", model: "anthropic:haiku", level: "specialist" as const, heartbeatIntervalMin: 15 },
+      { name: "friday", displayName: "Friday", role: "Developer", emoji: "💻", sessionKey: "agent:friday:main", model: "openai_codex:gpt52-xhigh", level: "specialist" as const, heartbeatIntervalMin: 15 },
+      { name: "wong", displayName: "Wong", role: "Documentation", emoji: "📚", sessionKey: "agent:wong:main", model: "openai_codex:gpt52-medium", level: "specialist" as const, heartbeatIntervalMin: 15 },
     ];
 
     const results = [];

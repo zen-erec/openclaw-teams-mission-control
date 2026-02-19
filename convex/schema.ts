@@ -13,9 +13,9 @@ export default defineSchema({
   // ---------------------------------------------------------------------------
   agents: defineTable({
     // 基本情報
-    name: v.string(),                    // "jarvis", "shuri", etc.
-    displayName: v.string(),             // "Jarvis", "Shuri", etc.
-    role: v.string(),                    // "Squad Lead", "Product Analyst", etc.
+    name: v.string(),                    // "jarvis", "loki", etc.
+    displayName: v.string(),             // "Jarvis", "Loki", etc.
+    role: v.string(),                    // "Squad Lead", "Content Writer", etc.
     emoji: v.string(),                   // "🤖", "🔬", etc.
 
     // セッション情報
